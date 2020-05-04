@@ -7,16 +7,18 @@ import socket
 
 
 #-----------
-try:
+# try:
+# 	mydb = mysql.connector.connect(
+# 		host=os.environ.get('DB_HOST'),
+# 		user=os.environ.get('DB_USER'),
+# 		passwd=os.environ.get('DB_PASSWORD'))
+
+def public_variable_db():
 	mydb = mysql.connector.connect(
 		host=os.environ.get('DB_HOST'),
 		user=os.environ.get('DB_USER'),
 		passwd=os.environ.get('DB_PASSWORD'))
-except expression as identifier:
-	mydb = mysql.connector.connect(
-		host=os.environ.get('DB_HOST'),
-		user=os.environ.get('DB_USER'),
-		passwd=os.environ.get('DB_PASSWORD'))
+	return True
 
 #-----------
 
@@ -53,6 +55,8 @@ def success_result(status,message):
 @app.route('/create_tb',methods=['POST'])
 def create_tb():
 	#dbname =request.form.get("dbname","")
+	public_variable_db()
+
 	json_data = request.get_json()
 	#request.form['projectFilepath']
 	tmp_str = ""
@@ -68,6 +72,8 @@ def create_tb():
 
 @app.route('/rm_tb',methods=['GET'])
 def rm_tb():
+	public_variable_db()
+
 	table_name =request.form.get("table_name","")
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
@@ -79,6 +85,8 @@ def rm_tb():
 @app.route("/add_website_link",methods=['POST'])
 def add_website_link():
 	try:
+		public_variable_db()
+
 		json_data = request.get_json()
 		mycursor = mydb.cursor()
 		mycursor.execute("USE irancell;")
@@ -97,6 +105,8 @@ def add_website_link():
 
 @app.route('/get_app',methods=['GET'])
 def get_app():
+	public_variable_db()
+
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
 	ip_address = request.remote_addr
@@ -123,6 +133,8 @@ def get_app():
 
 
 def application_info(ip_add,resultBanner):
+	public_variable_db()
+
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
 	select_phone_ip = "SELECT * FROM phone_ip WHERE address_ip ="+"'"+str(ip_add)+"'"
@@ -148,6 +160,8 @@ def phone_ip(ip_add):
 		#return "error"+str(myresult)
 		return "0"
 	else:
+		public_variable_db()
+		
 		sql = "INSERT INTO phone_ip (address_ip) VALUES (%s)"
 		val = [(str(ip_add))]
 		mycursor.execute(sql, val)
