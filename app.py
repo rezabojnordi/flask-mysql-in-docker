@@ -7,10 +7,16 @@ import socket
 
 
 #-----------
-mydb = mysql.connector.connect(
-	host=os.environ.get('DB_HOST'),
-	user=os.environ.get('DB_USER'),
-	passwd=os.environ.get('DB_PASSWORD'))
+try:
+	mydb = mysql.connector.connect(
+		host=os.environ.get('DB_HOST'),
+		user=os.environ.get('DB_USER'),
+		passwd=os.environ.get('DB_PASSWORD'))
+except expression as identifier:
+	mydb = mysql.connector.connect(
+		host=os.environ.get('DB_HOST'),
+		user=os.environ.get('DB_USER'),
+		passwd=os.environ.get('DB_PASSWORD'))
 
 #-----------
 
