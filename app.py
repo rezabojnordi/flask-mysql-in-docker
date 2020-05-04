@@ -7,13 +7,12 @@ import socket
 
 
 #-----------
-# try:
-# 	mydb = mysql.connector.connect(
-# 		host=os.environ.get('DB_HOST'),
-# 		user=os.environ.get('DB_USER'),
-# 		passwd=os.environ.get('DB_PASSWORD'))
-
-
+mydb = mysql.connector.connect(
+	host=os.environ.get('DB_HOST'),
+	user=os.environ.get('DB_USER'),
+	passwd=os.environ.get('DB_PASSWORD'),
+	
+	)
 
 #-----------
 
@@ -49,11 +48,6 @@ def success_result(status,message):
 
 @app.route('/create_tb',methods=['POST'])
 def create_tb():
-	mydb = mysql.connector.connect(
-		host=os.environ.get('DB_HOST'),
-		user=os.environ.get('DB_USER'),
-		passwd=os.environ.get('DB_PASSWORD'))
-		
 	#dbname =request.form.get("dbname","")
 	json_data = request.get_json()
 	#request.form['projectFilepath']
@@ -70,11 +64,6 @@ def create_tb():
 
 @app.route('/rm_tb',methods=['GET'])
 def rm_tb():
-	mydb = mysql.connector.connect(
-		host=os.environ.get('DB_HOST'),
-		user=os.environ.get('DB_USER'),
-		passwd=os.environ.get('DB_PASSWORD'))
-
 	table_name =request.form.get("table_name","")
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
@@ -154,7 +143,7 @@ def phone_ip(ip_add):
 	if(myresult !=[]):
 		#return "error"+str(myresult)
 		return "0"
-	else:		
+	else:
 		sql = "INSERT INTO phone_ip (address_ip) VALUES (%s)"
 		val = [(str(ip_add))]
 		mycursor.execute(sql, val)
