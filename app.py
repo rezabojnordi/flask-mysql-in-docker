@@ -4,6 +4,7 @@ import mysql.connector
 import os
 from flask import jsonify,json,request
 import socket
+from time import time
 
 
 #-----------
@@ -32,8 +33,6 @@ def error_result(status,message):
     results["error"]["status"]=status
     results["error"]['message']=message
     return jsonify(results)
-
-
 
 
 def success_result(status,message):
@@ -114,8 +113,34 @@ def get_app():
 	cn_tuple = tuple(tuple_link)
 
 	tmp = application_info(ip_address,cn_tuple)
-	return success_result("success",tmp)
+	return success_result("success",resultBanner)
 	#return str(tmp)
+
+"""
+def for get all ip
+"""
+@app.route('/phone_ip',methods=['GET'])
+def get_phone_ip():
+	mycursor = mydb.cursor()
+	mycursor.execute("USE irancell;")
+	select = "SELECT * FROM phone_ip"
+	mycursor.execute(select)
+	myresult = mycursor.fetchall()
+	return success_result("success",myresult)
+
+
+"""
+def for get all website_link
+"""
+@app.route('/get_website_link',methods=['GET'])
+def get_website_link():
+	mycursor = mydb.cursor()
+	mycursor.execute("USE irancell;")
+	select = "SELECT * FROM website_link"
+	mycursor.execute(select)
+	myresult = mycursor.fetchall()
+	return success_result("success",myresult)
+
 
 
 def application_info(ip_add,resultBanner):
@@ -127,7 +152,7 @@ def application_info(ip_add,resultBanner):
 	insert_app = "INSERT INTO app (ip_id, link_id,expire,time) VALUES (%s,%s,%s,%s)"
 	res_data=[]
 	for insert in resultBanner:
-		res_data.append((myresult[0],insert,"3658","2:25"))
+		res_data.append((myresult[0],insert,int(time()+86400),""))
 	mycursor.executemany(insert_app, res_data)
 	mydb.commit()
 	return "save in app"
