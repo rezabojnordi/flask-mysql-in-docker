@@ -97,7 +97,14 @@ def get_app():
 	ip_address = request.remote_addr
 	ip = phone_ip(ip_address)
 	#ip_id,link_id,expire,time,
-	app = "select * from website_link"
+	# 'SELECT a.tutorial_id, a.tutorial_author, b.tutorial_count
+    #   FROM tutorials_tbl a, tcount_tbl b
+    #   WHERE a.tutorial_author = b.tutorial_author';
+	time_now = int(time())
+	#app = "SELECT * from website_link where enable=1 LEFT JOIN app ON id=app.link_id and app.expire > %d"%time_now
+	#app = " SELECT website_link.id,website_link.link,website_link.click,website_link.time from website_link LEFT JOIN app ON website_link.id=app.link_id and app.expire < %d where website_link.enable=1;"%time_now
+	#app ="select * from website_link join app on website_link.id = app.link_id and app.expire < %d and website_link .enable=1;"%time_now
+	app ="select * from website_link where website_link.enable =1 and website_link.id not in (select link_id from app where app.expire > %d and app.ip_id=(select id from phone_ip where phone_ip.address_ip ='%s'))"%(time_now,ip_address)
 	mycursor.execute(app)
 	myresult = mycursor.fetchall()
 	resultBanner ={}
@@ -107,14 +114,25 @@ def get_app():
 			"link":row[1],
 			"click":row[2],
 			"time":row[3],
-			"enable":row[4]
 		}
 		tuple_link.append(row[0])
-	cn_tuple = tuple(tuple_link)
-
-	tmp = application_info(ip_address,cn_tuple)
-	return success_result("success",resultBanner)
+	if (len(tuple_link) > 0):
+		cn_tuple = tuple(tuple_link)
+		tmp = application_info(ip_address,cn_tuple)
+		return success_result("success",resultBanner)
+	return error_result("restart","restart airplan") 
 	#return str(tmp)
+
+
+@app.route('/remove_app',methods=['GET'])
+def remove_app():
+	# table_name =request.form.get("table_name","")
+	mycursor = mydb.cursor()
+	mycursor.execute("USE irancell;")
+	#mycursor.execute("DROP TABLE" +" "+str(table_name))
+	mycursor.execute("delete from app")
+	return success_result("success","remove app")
+
 
 """
 def for get all ip
@@ -146,7 +164,7 @@ def get_website_link():
 def application_info(ip_add,resultBanner):
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
-	select_phone_ip = "SELECT * FROM phone_ip WHERE address_ip ="+"'"+str(ip_add)+"'"
+	select_phone_ip = "SELECT * FROM phone_ip WHERE address_ip ='"+str(ip_add)+"'"
 	mycursor.execute(select_phone_ip)
 	myresult = mycursor.fetchone()
 	insert_app = "INSERT INTO app (ip_id, link_id,expire,time) VALUES (%s,%s,%s,%s)"
@@ -158,13 +176,12 @@ def application_info(ip_add,resultBanner):
 	return "save in app"
 
 
-
 def phone_ip(ip_add):
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
 	select = "SELECT * FROM phone_ip WHERE address_ip ="+"'"+str(ip_add)+"'"
 	mycursor.execute(select)
-	myresult = mycursor.fetchall()
+	myresult = mycursor.fetchone()
 	if(myresult !=[]):
 		#return "error"+str(myresult)
 		return "0"
