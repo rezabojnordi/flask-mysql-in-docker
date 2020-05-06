@@ -95,15 +95,15 @@ def get_app():
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
 	ip_address = request.remote_addr
-	ip = phone_ip(ip_address)
 	#ip_id,link_id,expire,time,
 	# 'SELECT a.tutorial_id, a.tutorial_author, b.tutorial_count
     #   FROM tutorials_tbl a, tcount_tbl b
     #   WHERE a.tutorial_author = b.tutorial_author';
-	time_now = int(time())
 	#app = "SELECT * from website_link where enable=1 LEFT JOIN app ON id=app.link_id and app.expire > %d"%time_now
 	#app = " SELECT website_link.id,website_link.link,website_link.click,website_link.time from website_link LEFT JOIN app ON website_link.id=app.link_id and app.expire < %d where website_link.enable=1;"%time_now
 	#app ="select * from website_link join app on website_link.id = app.link_id and app.expire < %d and website_link .enable=1;"%time_now
+	ip = phone_ip(ip_address)
+	time_now = int(time())
 	app ="select * from website_link where website_link.enable =1 and website_link.id not in (select link_id from app where app.expire > %d and app.ip_id=(select id from phone_ip where phone_ip.address_ip ='%s'))"%(time_now,ip_address)
 	mycursor.execute(app)
 	myresult = mycursor.fetchall()
@@ -118,7 +118,7 @@ def get_app():
 		tuple_link.append(row[0])
 	if (len(tuple_link) > 0):
 		cn_tuple = tuple(tuple_link)
-		tmp = application_info(ip_address,cn_tuple)
+		tmp = application_info(row[4],cn_tuple)
 		return success_result("success",resultBanner)
 	return error_result("restart","restart airplan") 
 	#return str(tmp)
@@ -164,13 +164,13 @@ def get_website_link():
 def application_info(ip_add,resultBanner):
 	mycursor = mydb.cursor()
 	mycursor.execute("USE irancell;")
-	select_phone_ip = "SELECT * FROM phone_ip WHERE address_ip ='"+str(ip_add)+"'"
-	mycursor.execute(select_phone_ip)
-	myresult = mycursor.fetchone()
+	#select_phone_ip = "SELECT * FROM phone_ip WHERE address_ip ='"+str(ip_add)+"'"
+	#mycursor.execute(select_phone_ip)
+	#myresult = mycursor.fetchone()
 	insert_app = "INSERT INTO app (ip_id, link_id,expire,time) VALUES (%s,%s,%s,%s)"
 	res_data=[]
 	for insert in resultBanner:
-		res_data.append((myresult[0],insert,int(time()+86400),""))
+		res_data.append((ip_add,insert,int(time()+86400),""))
 	mycursor.executemany(insert_app, res_data)
 	mydb.commit()
 	return "save in app"
