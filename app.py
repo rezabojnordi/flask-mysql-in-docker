@@ -5,6 +5,7 @@ import os
 from flask import jsonify,json,request
 import socket
 from time import time
+import random
 
 
 #-----------
@@ -110,10 +111,11 @@ def get_app():
 	resultBanner ={}
 	tuple_link = []
 	for count,row in enumerate(myresult):
+		times = random.randint(10, 60)
 		resultBanner[str(count)]={
 			"link":row[1],
 			"click":row[2],
-			"time":row[3],
+			"time":times,
 		}
 		tuple_link.append(row[0])
 	if (len(tuple_link) > 0):
