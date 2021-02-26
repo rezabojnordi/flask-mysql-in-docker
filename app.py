@@ -6,14 +6,12 @@ from flask import jsonify,json,request
 import socket
 from time import time
 import random
-
-
 #-----------
 mydb = mysql.connector.connect(
-	host=os.environ.get('DB_HOST'),
-	user=os.environ.get('DB_USER'),
-	passwd=os.environ.get('DB_PASSWORD'),
-	
+	host='localhost',
+	user="reza",
+	passwd="reza@123",
+
 	)
 
 #-----------
@@ -42,7 +40,7 @@ def success_result(status,message):
     results["data"]=message
     return jsonify(results)
 
-#-------------------------------# return error_result("fail","insert error%s"%e) 
+#-------------------------------# return error_result("fail","insert error%s"%e)
 
 
 @app.route('/create_tb',methods=['POST'])
@@ -77,15 +75,14 @@ def add_website_link():
 		json_data = request.get_json()
 		mycursor = mydb.cursor(buffered=True)
 		mycursor.execute("USE irancell;")
-		sql = "INSERT INTO website_link (url,click,time,agent) VALUES (%s, %s,%s,%s)"
-		val = (str(json_data["url"]),str(json_data["click"]),
-		str(json_data["time"]),str(json_data["agent"]))
+		sql = "INSERT INTO website_link (url,time,click,enable) VALUES (%s, %s,%s,%s)"
+		val = (str(json_data["url"]),str(json_data["time"]),str(json_data["click"]),str(json_data["enable"]))
 	# val = [("John", "Highway 21"),("reza","bojnordi")]
 		mycursor.execute(sql, val)
 		mydb.commit()
 		return jsonify("save in tables")
 	except expression as e:
-		return error_result("fail","insert error%s"%e) 
+            return error_result("fail","insert error%s"%e)
 
 
 
@@ -126,7 +123,7 @@ def add_website_link():
 # 		cn_tuple = tuple(tuple_link)
 # 		tmp = application_info(row[4],cn_tuple)
 # 		return success_result("success",resultBanner)
-# 	return error_result("restart","restart airplan") 
+# 	return error_result("restart","restart airplan")
 # 	#return str(tmp)
 
 
@@ -173,23 +170,26 @@ def get_website_link():
 
 
 
-def insert_apps(ip_id,resultBanner):
+def insert_apps(ip_id,resultBanner,mac_address):
+        expire = time()
 	my_cursor = mydb.cursor(buffered=True)
 	my_cursor.execute("USE irancell;")
 	select = "SELECT * FROM app WHERE ip_id ="+"'"+str(ip_id[0])+"'"
 	my_cursor.execute(select)
 	my_result = my_cursor.fetchone()
-
+        select_token = "select id from mac_token where mac_token.mac ="+"'"+str(ip_address)+"'"
+	my_cursor.execute(select_token)
+	result_token = my_cursor.fetchone()
 	if (my_result != None):
 		return my_result
 	else:
-		insert_app = "INSERT INTO app (ip_id, link_id,expire,time,status) VALUES (%s,%s,%s,%s,%s)"
+		insert_app = "INSERT INTO app (ip_id,link_id,expire_time,id_mac,status) VALUES (%s,%s,%s,%s,%s,%s)"
 		res_data=[]
 		expire = time()
 		for i in range(len(resultBanner)):
 			for j in range(len(resultBanner[i])):
 				pass
-			res_data.append((ip_id[0],resultBanner[i][0],expire,resultBanner[i][3],"pending"))
+			res_data.append((ip_id[0],resultBanner[i][0],expire,result_token[0],"pending"))
 		my_cursor.executemany(insert_app, res_data)
 		mydb.commit()
 		return my_result
@@ -213,11 +213,11 @@ def phone_ip(ip_add):
 		mydb.commit()
 		return my_result
 
-		
+
 	#"select * from website_link where website_link.enable =1 and website_link.id not in (select link_id from app where app.expire > %d and app.ip_id=(select id from phone_ip where phone_ip.address_ip ='%s'))"%(time_now,ip_address)
 ##	"SELECT * FROM website_link where website_link.id not in (select link_id from app where app.link_id ='1' and app.ip_id=(select id from phone_ip where phone_ip.address_ip='172.19.0.1'))"
 	#SELECT * FROM website_link where website_link.id not in (select link_id from app where app.link_id ='1' and app.ip_id=(select id from phone_ip where ='172.19.0.1'))
-   #"SELECT * FROM website_link where website_link.id not in (select link_id from app where app.link_id ='1' and app.ip_id=(select id from phone_ip where phone_ip.address_ip='172.19.0.1') and app.status=(select status from app where status='pending'))"	
+   #"SELECT * FROM website_link where website_link.id not in (select link_id from app where app.link_id ='1' and app.ip_id=(select id from phone_ip where phone_ip.address_ip='172.19.0.1') and app.status=(select status from app where status='pending'))"
 #	SELECT * FROM website_link where website_link.id in (select link_id from app where app.link_id ='%s' and app.ip_id=(select id from phone_ip where phone_ip.address_ip='%s' and app.status='pending'))
 
 	#select = "SELECT * FROM website_link where website_link.id in (select link_id from app where app.link_id ='%s' and app.ip_id=(select id from phone_ip where phone_ip.address_ip='%s' and app.status='pending'))"%(1,"172.19.0.1")
@@ -256,7 +256,7 @@ def get_app(phone_ip,resultBanner):
 	"Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:85.0) Gecko/20100101 Firefox/85.0",
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 11.2; rv:85.0) Gecko/20100101 Firefox/85.0"]
 
-		
+
 	agent_rand = random.randint(0, 25)
 	for i in range(len(my_result)):
 		for j in range(len(my_result[i])):
@@ -292,18 +292,42 @@ def check():
 	return success_result("success",get_app_all)
 
 
+
+
+
+
 @app.route('/v1/status_ok',methods=['POST'])
 def status_ok():
-	my_cursor = mydb.cursor(buffered=True)
-	my_cursor.execute("USE irancell;")
-	ip_address = request.remote_addr
-	time = request.args.get('time')
-	is_status = "ok"
-	###"Update app SET status ='ok' WHERE app.ip_id =(select id from phone_ip where phone_ip.address_ip='172.19.0.1' and app.time='18')"
-	update_status = "Update app SET status ='%s' WHERE app.ip_id =(select id from phone_ip where phone_ip.address_ip='%s' and app.time='%s')"%(is_status,ip_address,time) 
-	my_cursor.execute(update_status)
-	mydb.commit()
-	return success_result("success",[])
+    my_cursor = mydb.cursor(buffered=True)
+    my_cursor.execute("USE irancell;")
+    ip_address = request.remote_addr
+    url = request.args.get('url')
+    is_status = "ok"
+    expire = time()
+#    select_phone_id = "select id from phone_ip where phone_ip.address_ip='%s')"%(ip_address)
+    select_phone_id = "select id from phone_ip where address_ip ="+"'"+str(ip_address)+"'"
+    my_cursor.execute(select_phone_id)
+    result_phone_id = my_cursor.fetchone()
+    select_link_id = "select id from website_link where website_link.url="+"'"+str(url)+"'"
+    my_cursor.execute(select_link_id)
+    result_link_id = my_cursor.fetchone()
+    insert_status = "INSERT INTO app(ip_id,link_id,expire,time,status) VALUES (%s,%s,%s,%s,%s)"
+    val = (result_phone_id[0],result_link_id[0],expire,"2",is_status)
+    my_cursor.execute(insert_status, val)
+    mydb.commit()
+    return success_result("success",[])
+#@app.route('/v1/status_ok',methods=['POST'])
+#def status_ok():
+#	my_cursor = mydb.cursor(buffered=True)
+#	my_cursor.execute("USE irancell;")
+#	ip_address = request.remote_addr
+#	time = request.args.get('time')
+#	is_status = "ok"
+#	###"Update app SET status ='ok' WHERE app.ip_id =(select id from phone_ip where phone_ip.address_ip='172.19.0.1' and app.time='18')"
+#	update_status = "Update app SET status ='%s' WHERE app.ip_id =(select id from phone_ip where phone_ip.address_ip='%s' and app.time='%s')"%(is_status,ip_address,time)
+#	my_cursor.execute(update_status)
+#	mydb.commit()
+#	return success_result("success",[])
 
 
 
