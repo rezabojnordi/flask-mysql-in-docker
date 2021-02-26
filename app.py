@@ -226,6 +226,7 @@ def phone_ip(ip_add):
 def get_app(phone_ip,resultBanner):
 	my_cursor = mydb.cursor(buffered=True)
 	my_cursor.execute("USE irancell;")
+	
 	select ="select website_link.url,website_link.click,website_link.time,app.status,phone_ip.address_ip FROM website_link inner join app on app.link_id=website_link.id inner join phone_ip on app.ip_id=phone_ip.id WHERE app.status='pending' and phone_ip.address_ip='%s'"%(phone_ip[1])
 	my_cursor.execute(select)
 	my_result = my_cursor.fetchall()
@@ -274,11 +275,25 @@ def get_app(phone_ip,resultBanner):
 
 
 
+@app.route('/v1/token',methods=['GET'])
+def token():
+	'''
+	# headser
+	read mac from header if mac exist in your tables generete token and return
+	Note:
+	tables consis of mac and token
+	if mac is not exisist in our databse return permission deny otherwise store token for mac and return it.
+	disable and enable filed in tables 
+	'''
+	pass
+
 
 @app.route('/v1/check',methods=['GET'])
 def check():
 	my_cursor = mydb.cursor(buffered=True)
 	my_cursor.execute("USE irancell;")
+	# header read token and check exist in your tables
+	# check disiable and enable mac
 	ip_address = request.remote_addr
 	select = "SELECT * FROM website_link"
 	my_cursor.execute(select)
@@ -297,15 +312,36 @@ def status_ok():
 	my_cursor = mydb.cursor(buffered=True)
 	my_cursor.execute("USE irancell;")
 	ip_address = request.remote_addr
-	time = request.args.get('time')
+	url = request.args.get('url')
 	is_status = "ok"
+	expire = time()
 	###"Update app SET status ='ok' WHERE app.ip_id =(select id from phone_ip where phone_ip.address_ip='172.19.0.1' and app.time='18')"
-	update_status = "Update app SET status ='%s' WHERE app.ip_id =(select id from phone_ip where phone_ip.address_ip='%s' and app.time='%s')"%(is_status,ip_address,time) 
-	my_cursor.execute(update_status)
+	#update_status = "Update app SET status ='%s' WHERE app.ip_id =(select id from phone_ip where phone_ip.address_ip='%s' and app.time='%s')"%(is_status,ip_address,time) 
+	#my_cursor.execute(update_status)
+	#mydb.commit()
+	### add id_mac for app tables
+	# select phone_id 
+	select_phone_id = "select id from phone_ip where phone_ip.address_ip='%s')"%(ip_address)
+	select_link_id = "select id from website_link where website_link.url='%s')"%(url)
+	insert_status = "INSERT INTO app(ip_id,link_id,expire,time,status) valuses (%s,%s,%s,%s,%s)"
+	val = (select_phone_id,select_link_id,expire,"",is_status)
+	my_cursor.execute(insert_status, val)
 	mydb.commit()
 	return success_result("success",[])
 
 
 
-if __name__ == '__main__':
-	app.run(host= '0.0.0.0',debug=True,port=80)
+# if __name__ == '__main__':
+# 	app.run(host= '0.0.0.0',debug=True,port=80)
+
+
+# 		insert_app = "INSERT INTO app (ip_id, link_id,expire,time,status) VALUES (%s,%s,%s,%s,%s)"
+# 		res_data=[]
+# 		expire = time()
+# 		for i in range(len(resultBanner)):
+# 			for j in range(len(resultBanner[i])):
+# 				pass
+# 			res_data.append((ip_id[0],resultBanner[i][0],expire,resultBanner[i][3],"pending"))
+# 		my_cursor.executemany(insert_app, res_data)
+# 		mydb.commit()
+# 		return my_result
